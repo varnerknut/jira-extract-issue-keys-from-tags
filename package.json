@@ -1,5 +1,5 @@
 {
-  "name": "commit-messages-since-release",
+  "name": "commit-messages-between-tags",
   "version": "1.0.0",
   "description": "- token:   - description: Your Github token   - required: true - release-tag:   - description: The release tag, defaults to N-1 release   - required: false # Outputs - messages:   - description: All commit messages",
   "main": "index.js",
@@ -9,15 +9,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Elfsquad/commit-messages-since-release.git"
+    "url": "git+https://github.com/varnerknut/jira-extract-issue-keys-from-tags.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Elfsquad/commit-messages-since-release/issues"
+    "url": "https://github.com/varnerknut/jira-extract-issue-keys-from-tags/issues"
   },
-  "homepage": "https://github.com/Elfsquad/commit-messages-since-release#readme",
+  "homepage": "https://github.com/varnerknut/jira-extract-issue-keys-from-tags#readme",
   "dependencies": {
     "@actions/core": "^1.6.0",
     "@actions/github": "^5.0.0"

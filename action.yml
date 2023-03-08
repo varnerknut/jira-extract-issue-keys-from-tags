@@ -1,4 +1,4 @@
-name: Jira extract issues
+name: Jira extract issues by tags
 description: Extract issue keys from commit messages
 branding:
   color: blue
