@@ -5,23 +5,22 @@ const context = github.context;
 
 const getRepoTags = async () => {
   let currentPage = 1;
+  let pageSize = 30;
   let response = await octokit.rest.repos.listTags({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    per_page: 10, 
+    per_page: pageSize, 
     page: currentPage++
   });
-  var result = response.data;
-  console.log("response", response)
-  while (response && response.data && response.data.length == 10){
+  var result = response.data;  
+  while (response && response.data && response.data.length == pageSize){
     response = await octokit.rest.repos.listTags({
       owner: context.repo.owner,
       repo: context.repo.repo,
-      per_page: 10, 
+      per_page: pageSize, 
       page: currentPage++
-    });
-    console.log("response" + currentPage, response)
-    result.push(response.data)
+    });    
+    result.concat(response.data)
   }
   console.log("result", result)
   return result;
