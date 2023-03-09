@@ -20,7 +20,7 @@ const getRepoTags = async () => {
       per_page: pageSize, 
       page: currentPage++
     });    
-    result.concat(response.data)
+    result = result.concat(response.data)
   }
   console.log("result", result)
   return result;
