@@ -9755,9 +9755,8 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
     const headReleaseTag = core.getInput("head-tag");
     console.log("Head release tag: ", headReleaseTag);
 
-    var repoTags = await getRepoTags();
-    console.log("repoTags: ", repoTags);
-    let tags = repoTags.map((c) => c.name);
+    var repoTags = await getRepoTags();    
+    let tags = repoTags.map(c => c.name);
 
     const baseReleaseTag = core.getInput("release-tag") || await findPreviousSemver(headReleaseTag, tags);
     console.log("Previous release tag: ", baseReleaseTag);
@@ -9783,6 +9782,7 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
     if (!continueOnError) {
       core.setFailed(error.message);
     } else {
+      console.error(error.message)
       core.setOutput("issue-keys", "");
     }
   }
