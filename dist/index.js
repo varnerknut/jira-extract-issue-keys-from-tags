@@ -9729,7 +9729,7 @@ const getRepoTags = async () => {
 };
 
 const findPreviousSemver = async (semverString, semverStringArray) => {
-  confole.log("findPreviousSemver", semverString, semverStringArray);
+  console.log("findPreviousSemver", semverString, semverStringArray);
   if (!semverStringArray.length) {
     return null;
   }
