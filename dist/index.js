@@ -9788,9 +9788,8 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
       if (!continueOnError) {
         throw new Error("No issue keys found");
       }
-    }
-    console.log("response.data.commits", response.data.commits);
-    console.log("issue-keys", issueKeys);
+    }    
+    console.log("Found the following issue-keys", issueKeys);
     core.setOutput("issue-keys", issueKeys.join(","));
   } catch (error) {
     if (!continueOnError) {
