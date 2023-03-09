@@ -39,7 +39,7 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
 
     var repoTags = await getRepoTags();
     console.log("repoTags: ", repoTags);
-    const tags = repoTags.map((c) => c.name);
+    let tags = repoTags.map((c) => c.name);
 
     const baseReleaseTag = core.getInput("release-tag") || await findPreviousSemver(headReleaseTag, tags);
     console.log("Previous release tag: ", baseReleaseTag);
