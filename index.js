@@ -29,6 +29,7 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
 }
 
 (async function () {
+  const continueOnError = core.getInput("continue-on-error");
   try {
     const token = core.getInput("token");
     octokit = github.getOctokit(token);
@@ -43,8 +44,6 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
 
     const baseReleaseTag = core.getInput("release-tag") || await findPreviousSemver(headReleaseTag, tags);
     console.log("Previous release tag: ", baseReleaseTag);
-
-    const continueOnError = core.getInput("continue-on-error");
 
     const response = await octokit.rest.repos.compareCommitsWithBasehead({
       owner: context.repo.owner,

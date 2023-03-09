@@ -20,6 +20,6 @@ ouputs:
   issue-keys:
     description: All issue keys, separated by a comma
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
 
