@@ -38,12 +38,13 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
     console.log("Head release tag: ", headReleaseTag);
 
     var repoTags = await getRepoTags();
+    console.log("repoTags: ", repoTags);
     const tags = repoTags.map((c) => c.name);
 
     const baseReleaseTag = core.getInput("release-tag") || await findPreviousSemver(headReleaseTag, tags);
     console.log("Previous release tag: ", baseReleaseTag);
 
-    const continueOnError = core.getInput("continue-on-error") || false;
+    const continueOnError = core.getInput("continue-on-error");
 
     const response = await octokit.rest.repos.compareCommitsWithBasehead({
       owner: context.repo.owner,
@@ -63,7 +64,7 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
     }
     core.setOutput("issue-keys", issueKeys.join(","));
   } catch (error) {
-    if (!continueOnerror) {
+    if (!continueOnError) {
       core.setFailed(error.message);
     } else {
       core.setOutput("issue-keys", "");
