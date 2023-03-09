@@ -7,8 +7,11 @@ inputs:
   token:
     description: Your Github token
     required: true
+  head-tag:
+    description: The head tag, in format xxx_v1.1.0 || v1.1.0 || 1.1.0 || 1.1
+    required: false
   release-tag:
-    description: The release tag, defaults to N-1 release
+    description: The release tag, defaults to previous semver if not specified
     required: false
   continue-on-error:
     required: false
