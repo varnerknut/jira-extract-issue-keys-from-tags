@@ -9,7 +9,7 @@ inputs:
     required: true
   head-tag:
     description: The head tag, in format xxx_v1.1.0 || v1.1.0 || 1.1.0 || 1.1
-    required: false
+    required: true
   release-tag:
     description: The release tag, defaults to previous semver if not specified
     required: false
