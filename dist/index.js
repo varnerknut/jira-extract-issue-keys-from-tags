@@ -9739,7 +9739,6 @@ const getRepoTags = async () => {
     });    
     result = result.concat(response.data)
   }
-  console.log("result", result)
   return result;
 };
 
@@ -9781,9 +9780,8 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
       repo: context.repo.repo,
       basehead: `${baseReleaseTag}...${headReleaseTag}`,
     });
-    const messages = (
-      response.data.commits.map((c) => c.commit.message) || []
-    ).join("");
+    console.log("Response", response)
+    const messages = (response.data.commits.map((c) => c.commit.message) || [""]).join("");
     const regex = /[A-Z]{2,}-\d+/g;
     const issueKeys = messages.match(regex);
 
@@ -9797,7 +9795,7 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
     if (!continueOnError) {
       core.setFailed(error.message);
     } else {
-      console.error(error.message)
+      console.error(error.message, error);
       core.setOutput("issue-keys", "");
     }
   }
