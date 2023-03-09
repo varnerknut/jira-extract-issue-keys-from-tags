@@ -4,7 +4,7 @@ const github = require("@actions/github");
 const context = github.context;
 
 const getRepoTags = async () => {
-  let currentPage = 0;
+  let currentPage = 1;
   let response = await octokit.rest.repos.listTags({
     owner: context.repo.owner,
     repo: context.repo.repo,
