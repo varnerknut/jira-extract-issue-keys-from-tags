@@ -9729,6 +9729,7 @@ const getRepoTags = async () => {
     page: currentPage++
   });
   var result = response.data;
+  console.log("response", response)
   while (response && response.data && response.data.length == 10){
     response = await octokit.rest.repos.listTags({
       owner: context.repo.owner,
@@ -9736,8 +9737,10 @@ const getRepoTags = async () => {
       per_page: 10, 
       page: currentPage++
     });
+    console.log("response" + currentPage, response)
     result.push(response.data)
   }
+  console.log("result", result)
   return result;
 };
 
