@@ -9779,8 +9779,7 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
       owner: context.repo.owner,
       repo: context.repo.repo,
       basehead: `${baseReleaseTag}...${headReleaseTag}`,
-    });
-    console.log("Response", response)
+    });    
     const messages = (response.data.commits.map((c) => c.commit.message) || [""]).join("");
     const regex = /[A-Z]{2,}-\d+/g;
     const issueKeys = messages.match(regex);
@@ -9790,6 +9789,8 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
         throw new Error("No issue keys found");
       }
     }
+    console.log("response.data.commits", response.data.commits);
+    console.log("issue-keys", issueKeys);
     core.setOutput("issue-keys", issueKeys.join(","));
   } catch (error) {
     if (!continueOnError) {
