@@ -4,11 +4,24 @@ const github = require("@actions/github");
 const context = github.context;
 
 const getRepoTags = async () => {
-  const response = await octokit.rest.repos.listTags({
+  let currentPage = 0;
+  let response = await octokit.rest.repos.listTags({
     owner: context.repo.owner,
     repo: context.repo.repo,
+    per_page: 10, 
+    page: currentPage++
   });
-  return response.data;
+  var result = response.data;
+  while (response && response.data && response.data.length == 10){
+    response = await octokit.rest.repos.listTags({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      per_page: 10, 
+      page: currentPage++
+    });
+    result.push(response.data)
+  }
+  return result;
 };
 
 const findPreviousSemver = async (semverString, semverStringArray) => {
