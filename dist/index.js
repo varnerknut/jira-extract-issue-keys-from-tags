@@ -9742,13 +9742,21 @@ const getRepoTags = async () => {
   return result;
 };
 
+const sortSemVer = (arr, reverse = false) => {
+  let semVerArr = arr.map(i => i.replace(/(\d+)/g, m => +m + 100000)).sort(); // +m is just a short way of converting the match to int
+  if (reverse)
+      semVerArr = semVerArr.reverse();
+
+  return semVerArr.map(i => i.replace(/(\d+)/g, m => +m - 100000))
+}
+
 const findPreviousSemver = async (semverString, semverStringArray) => {
   console.log("findPreviousSemver", semverString, semverStringArray);
   if (!semverStringArray.length) {
     return null;
   }
 
-  const sortedSemvers = semverStringArray.sort();
+  const sortedSemvers = sortSemVer(semverStringArray);
   var indexOfCurrent = sortedSemvers.indexOf(semverString);
   if (indexOfCurrent > -1) {
     if (indexOfCurrent > 0) {
@@ -9789,7 +9797,7 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
         throw new Error("No issue keys found");
       }
     }    
-    console.log("Found the following issue-keys", issueKeys);
+    console.log("Found the following issue-keys", issueKeys.join(","));
     core.setOutput("issue-keys", issueKeys.join(","));
   } catch (error) {
     if (!continueOnError) {
