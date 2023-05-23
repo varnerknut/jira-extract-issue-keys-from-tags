@@ -1,4 +1,3 @@
-const core = require("@actions/core");
 const github = require("@actions/github");
 
 const context = github.context;
@@ -142,25 +141,22 @@ const main = async(continueOnError, token, headReleaseTag, releaseTag, owner, re
     let output = issueKeys.join(",");
     return output;
   }
+  
 
 (async function () {
-  const continueOnError = core.getInput("continue-on-error");
+  const continueOnError = true;
   try {
-    const token = core.getInput("token");
-    const headReleaseTag = core.getInput("head-tag");
-    const baseReleaseTag = core.getInput("release-tag");
-    const owner = context.repo.owner;
-    const repo = context.repo.repo;
-    const tagFilter = core.getInput("tag-filter");
-    const pathFilter = core.getInput("path-filter");
-    let issueKeys = await main(continueOnError, token, headReleaseTag, baseReleaseTag, owner, repo, tagFilter, pathFilter);    
-    core.setOutput("issue-keys", issueKeys);
-  } catch (error) {
-    if (!continueOnError) {
-      core.setFailed(error.message);
-    } else {
-      console.error(error.message, error);
-      core.setOutput("issue-keys", "");
-    }
+    console.info("Starting");
+    var args = process.argv.slice(2);
+    const token = args[0];
+    const headReleaseTag = args[1];
+    const baseReleaseTag = null;
+    const owner = args[2];
+    const repo = args[3];
+    const tagFilter = args[4];
+    const pathFilter = args[5];
+    let issueKeys = await main(continueOnError, token, headReleaseTag, baseReleaseTag, owner, repo, tagFilter, pathFilter);
+  } catch (error) {    
+    console.error(error.message, error);
   }
 })();

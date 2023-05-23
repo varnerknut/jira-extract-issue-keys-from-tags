@@ -9720,20 +9720,23 @@ const github = __nccwpck_require__(2943);
 
 const context = github.context;
 
-const getRepoTags = async () => {
+const getRepoTags = async (owner, repo) => {
   let currentPage = 1;
   let pageSize = 30;
   let response = await octokit.rest.repos.listTags({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
+    owner: owner,
+    repo: repo,
     per_page: pageSize, 
     page: currentPage++
   });
+  if (!response || !response.data){
+    return null; 
+  }
   var result = response.data;  
   while (response && response.data && response.data.length == pageSize){
     response = await octokit.rest.repos.listTags({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
+      owner: owner,
+      repo: repo,
       per_page: pageSize, 
       page: currentPage++
     });    
@@ -9767,38 +9770,108 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
   return null;
 }
 
-(async function () {
-  const continueOnError = core.getInput("continue-on-error");
-  try {
-    const token = core.getInput("token");
-    octokit = github.getOctokit(token);
-    console.log("Initiated octokit");
+const extractCommitsBasedOnFilePath = async (commits, pathFilter, owner, repo) => {
+  let includedCommits = [];
+  let fileMatches = pathFilter.split(",");
+  for (const commit of commits){    
+    let response = await octokit.rest.repos.getCommit({
+      owner: owner,
+      repo: repo,
+      ref: commit.sha
+    });
+    let files = response.data.files
+    loopFiles:
+    for (const file of files){      
+      for (const fileMatch of fileMatches){
+        if (file.filename.startsWith(fileMatch)){
+          includedCommits.push(commit);
+          break loopFiles;
+        }
+      }
+    }    
+  };
+  return includedCommits ? includedCommits.map((c) => c.commit.message) : null;
+}
 
-    const headReleaseTag = core.getInput("head-tag");
+const getBranchForHeadCommit = async (headReleaseTag, owner, repo) => {
+  let response = await octokit.rest.repos.listBranchesForHeadCommit({
+    owner,
+    repo,
+    commit_sha: headReleaseTag,
+  });
+  return response.data;
+}
+
+const main = async(continueOnError, token, headReleaseTag, releaseTag, owner, repo, tagFilter, pathFilter) => {
+    octokit = github.getOctokit(token, { owner: "", repo: ""});
+    console.log("Initiated octokit");    
     console.log("Head release tag: ", headReleaseTag);
-
-    var repoTags = await getRepoTags();    
-    let tags = repoTags.map(c => c.name);
-
-    const baseReleaseTag = core.getInput("release-tag") || await findPreviousSemver(headReleaseTag, tags);
+  
+    var repoTags = await getRepoTags(owner, repo);  
+    if (!repoTags || repoTags.length == 0) {
+      if (!continueOnError) {
+        throw new Error("No repo tags found");
+      }
+      else{
+        console.warn("No repo tags found");
+        return [];
+      }
+    }    
+    
+    let tags = tagFilter ? repoTags.filter(c => c.name.startsWith(tagFilter)).map(c => c.name) : repoTags.map(c => c.name);
+    const baseReleaseTag = releaseTag || await findPreviousSemver(headReleaseTag, tags);
     console.log("Previous release tag: ", baseReleaseTag);
+  
+    if (!baseReleaseTag) {
+      if (!continueOnError) {
+        throw new Error("Could not find previous release tag");
+      }
+      else{
+        console.warn("Could not find previous release tag");
+        return [];
+      }
+    }    
 
     const response = await octokit.rest.repos.compareCommitsWithBasehead({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
+      owner: owner,
+      repo: repo,
       basehead: `${baseReleaseTag}...${headReleaseTag}`,
     });    
-    const messages = (response.data.commits.map((c) => c.commit.message) || [""]).join("");
+    let messages = pathFilter ? (await extractCommitsBasedOnFilePath(response.data.commits, pathFilter, owner, repo) || [""]).join("") : (response.data.commits.map((c) => c.commit.message) || [""]).join("");
+    const branchHead = await getBranchForHeadCommit(response.data.commits[response.data.commits.length - 1].sha, owner, repo);
+    const branchHeadNames = branchHead.map((c) => c.name) || [""]
+    messages += branchHeadNames.join("");
+    
     const regex = /[A-Z]{2,}-\d+/g;
-    const issueKeys = messages.match(regex);
-
+    let issueKeys = messages.match(regex);
+  
     if (!issueKeys || issueKeys.length == 0) {
       if (!continueOnError) {
         throw new Error("No issue keys found");
       }
+      else{
+        console.warn("No issue keys found");
+        return []
+      }
     }    
+    issueKeys = [...new Set(issueKeys)] //remove duplicates
     console.log("Found the following issue-keys", issueKeys.join(","));
-    core.setOutput("issue-keys", issueKeys.join(","));
+    let output = issueKeys.join(",");
+    return output;
+  }
+
+(async function () {
+  const continueOnError = core.getInput("continue-on-error");
+  try {
+    const token = core.getInput("token");
+    const headReleaseTag = core.getInput("head-tag");
+    const baseReleaseTag = core.getInput("release-tag");
+    const owner = context.repo.owner;
+    const repo = context.repo.repo;
+    const tagFilter = core.getInput("tag-filter");
+    const pathFilter = core.getInput("path-filter");
+    let issueKeys = await main(continueOnError, token, headReleaseTag, baseReleaseTag, owner, repo, tagFilter, pathFilter);    
+    core.setOutput("issue-keys", issueKeys);
   } catch (error) {
     if (!continueOnError) {
       core.setFailed(error.message);

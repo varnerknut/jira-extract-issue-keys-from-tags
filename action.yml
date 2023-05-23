@@ -13,9 +13,16 @@ inputs:
   release-tag:
     description: The release tag, defaults to previous semver if not specified
     required: false
-  continue-on-error:
+  tag-filter:
+    description: Tag used for filtering tags when finding previous release tag. Used as startsWith, ie. "xxx_" will only match tags starting with xxx_
+    required: false 
+  path-filter:
+    description: Path filter for only extracting issues that has files matching certain paths. Supports a list of paths, by seperating with comma, ie. "src, folder/src". Useful in monorepos with several projects
     required: false
-    default: false
+  continue-on-error:    
+    description: if set to false, do not throw exception on errors to continue flow.
+    default: "false"
+    required: false    
 ouputs:
   issue-keys:
     description: All issue keys, separated by a comma

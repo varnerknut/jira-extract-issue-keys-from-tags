@@ -11,6 +11,12 @@ Based on https://github.com/Elfsquad/jira-extract-issue-keys
 - release-tag:
   - description: The release tag, defaults to previous semver if not specified
   - required: false
+- tag-filter:
+  - description: Tag used for filtering tags when finding previous release tag. Used as startsWith, ie. "xxx_" will only match tags starting with xxx_
+  - required: false, 
+- path-filter:
+  - description: Path filter for only extracting issues that has files matching certain paths. Supports a list of paths, by seperating with comma, ie. "src, folder/src". Useful in monorepos with several projects
+  - required: false
 ## Outputs
 - messages:
   - description: All commit messages
