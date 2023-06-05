@@ -18,6 +18,5 @@ Based on https://github.com/Elfsquad/jira-extract-issue-keys
   - description: Path filter for only extracting issues that has files matching certain paths. Supports a list of paths, by seperating with comma, ie. "src, folder/src". Useful in monorepos with several projects
   - required: false
 ## Outputs
-- messages:
-  - description: All commit messages
-
+- issue-keys:
+  - description: All issue keys, separated by a comma
