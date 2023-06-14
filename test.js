@@ -96,7 +96,7 @@ const main = async(continueOnError, token, headReleaseTag, releaseTag, owner, re
       }
       else{
         console.warn("No repo tags found");
-        return [];
+        return "";
       }
     }    
     
@@ -110,7 +110,7 @@ const main = async(continueOnError, token, headReleaseTag, releaseTag, owner, re
       }
       else{
         console.warn("Could not find previous release tag");
-        return [];
+        return "";
       }
     }    
 
@@ -133,7 +133,7 @@ const main = async(continueOnError, token, headReleaseTag, releaseTag, owner, re
       }
       else{
         console.warn("No issue keys found");
-        return []
+        return ""
       }
     }    
     issueKeys = [...new Set(issueKeys)] //remove duplicates
