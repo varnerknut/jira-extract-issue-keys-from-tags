@@ -80,7 +80,7 @@ const extractCommitsBasedOnFilePath = async (commits, pathFilter, owner, repo) =
       }
     }    
   };  
-  console.log("includedCommits", includedCommits.map((c) => c.commit.message));
+  console.log("includedCommitMessages", includedCommits.map((c) => c.commit.message));
   return includedCommits ? includedCommits.map((c) => c.commit.message) : null;
 }
 
