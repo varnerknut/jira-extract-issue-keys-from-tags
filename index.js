@@ -63,6 +63,10 @@ const extractCommitsBasedOnFilePath = async (commits, pathFilter, owner, repo) =
       ref: commit.sha
     });
     let files = response.data.files
+    if (files.length == 0 && response.data.committer.type == "Bot"){ //include bot commits for nojira commits
+      includedCommits.push(commit);
+      continue;
+    }
     loopFiles:
     for (const file of files){      
       for (const fileMatch of fileMatches){

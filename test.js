@@ -1,4 +1,8 @@
 const github = require("@actions/github");
+//Test by running the following command in the terminal:
+//node test.js <token> <headReleaseTag> <owner> <repo> <tagFilter> <pathFilter>
+//Example:
+//node test.js ghp_1234567890abcdef1234567890abcdef WebApi_TEST_v1.16 myorg myrepo WebApi_TEST WebApi/src
 
 const context = github.context;
 
@@ -62,6 +66,10 @@ const extractCommitsBasedOnFilePath = async (commits, pathFilter, owner, repo) =
       ref: commit.sha
     });
     let files = response.data.files
+    if (files.length == 0 && response.data.committer.type == "Bot"){ //include bot commits for nojira commits
+      includedCommits.push(commit);
+      continue;
+    }
     loopFiles:
     for (const file of files){      
       for (const fileMatch of fileMatches){
@@ -71,7 +79,8 @@ const extractCommitsBasedOnFilePath = async (commits, pathFilter, owner, repo) =
         }
       }
     }    
-  };
+  };  
+  console.log("includedCommits", includedCommits.map((c) => c.commit.message));
   return includedCommits ? includedCommits.map((c) => c.commit.message) : null;
 }
 
