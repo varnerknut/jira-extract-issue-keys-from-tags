@@ -9,32 +9,48 @@ const getRepoTags = async (owner, repo) => {
   let response = await octokit.rest.repos.listTags({
     owner: owner,
     repo: repo,
-    per_page: pageSize, 
-    page: currentPage++
+    per_page: pageSize,
+    page: currentPage++,
   });
-  if (!response || !response.data){
-    return null; 
+  if (!response || !response.data) {
+    return null;
   }
-  var result = response.data;  
-  while (response && response.data && response.data.length == pageSize){
+  var result = response.data;
+  while (response && response.data && response.data.length == pageSize) {
     response = await octokit.rest.repos.listTags({
       owner: owner,
       repo: repo,
-      per_page: pageSize, 
-      page: currentPage++
-    });    
-    result = result.concat(response.data)
+      per_page: pageSize,
+      page: currentPage++,
+    });
+    result = result.concat(response.data);
   }
   return result;
 };
 
 const sortSemVer = (arr, reverse = false) => {
-  let semVerArr = arr.map(i => i.replace(/(\d+)/g, m => +m + 100000)).sort(); // +m is just a short way of converting the match to int
-  if (reverse)
-      semVerArr = semVerArr.reverse();
-
-  return semVerArr.map(i => i.replace(/(\d+)/g, m => +m - 100000))
-}
+  // Pad each numeric segment to 8 digits for sorting, preserving leading zeros
+  const padWidth = 8;
+  let semVerArr = arr.map((i) =>
+    i.replace(/(\d+)/g, (m) => m.padStart(padWidth, "0"))
+  ).sort();
+  if (reverse) {
+    semVerArr = semVerArr.reverse();
+  }
+  // Remove padding after sorting, but preserve all original digits (including leading zeros)
+  // To do this, keep a mapping from padded to an array of originals
+  const originalMap = {};
+  arr.forEach((orig) => {
+    const padded = orig.replace(/(\d+)/g, (m) => m.padStart(padWidth, "0"));
+    if (!originalMap[padded]) {
+      originalMap[padded] = [];
+    }
+    originalMap[padded].push(orig);
+  });
+  return semVerArr.map((padded) =>
+    (originalMap[padded] && originalMap[padded].shift()) || padded
+  );
+};
 
 const findPreviousSemver = async (semverString, semverStringArray) => {
   console.log("findPreviousSemver", semverString, semverStringArray);
@@ -51,35 +67,43 @@ const findPreviousSemver = async (semverString, semverStringArray) => {
     return sortedSemvers[indexOfCurrent];
   }
   return null;
-}
+};
 
-const extractCommitsBasedOnFilePath = async (commits, pathFilter, owner, repo) => {
+const extractCommitsBasedOnFilePath = async (
+  commits,
+  pathFilter,
+  owner,
+  repo,
+) => {
   let includedCommits = [];
   let fileMatches = pathFilter.split(",");
-  for (const commit of commits){    
+  for (const commit of commits) {
     let response = await octokit.rest.repos.getCommit({
       owner: owner,
       repo: repo,
-      ref: commit.sha
+      ref: commit.sha,
     });
-    let files = response.data.files
-    if (files.length == 0 && response.data.committer.type == "Bot"){ //include bot commits for nojira commits
+    let files = response.data.files;
+    if (files.length == 0 && response.data.committer.type == "Bot") { //include bot commits for nojira commits
       includedCommits.push(commit);
       continue;
     }
     loopFiles:
-    for (const file of files){      
-      for (const fileMatch of fileMatches){
-        if (file.filename.startsWith(fileMatch)){
+    for (const file of files) {
+      for (const fileMatch of fileMatches) {
+        if (file.filename.startsWith(fileMatch)) {
           includedCommits.push(commit);
           break loopFiles;
         }
       }
-    }    
-  };
-  console.log("includedCommitMessages", includedCommits.map((c) => c.commit.message));
+    }
+  }
+  console.log(
+    "includedCommitMessages",
+    includedCommits.map((c) => c.commit.message),
+  );
   return includedCommits ? includedCommits.map((c) => c.commit.message) : null;
-}
+};
 
 const getBranchForHeadCommit = async (headReleaseTag, owner, repo) => {
   let response = await octokit.rest.repos.listBranchesForHeadCommit({
@@ -88,65 +112,85 @@ const getBranchForHeadCommit = async (headReleaseTag, owner, repo) => {
     commit_sha: headReleaseTag,
   });
   return response.data;
-}
+};
 
-const main = async(continueOnError, token, headReleaseTag, releaseTag, owner, repo, tagFilter, pathFilter) => {
-    octokit = github.getOctokit(token, { owner: "", repo: ""});
-    console.log("Initiated octokit");    
-    console.log("Head release tag: ", headReleaseTag);
-  
-    var repoTags = await getRepoTags(owner, repo);  
-    if (!repoTags || repoTags.length == 0) {
-      if (!continueOnError) {
-        throw new Error("No repo tags found");
-      }
-      else{
-        console.warn("No repo tags found");
-        return "";
-      }
-    }    
-    
-    let tags = tagFilter ? repoTags.filter(c => c.name.startsWith(tagFilter)).map(c => c.name) : repoTags.map(c => c.name);
-    const baseReleaseTag = releaseTag || await findPreviousSemver(headReleaseTag, tags);
-    console.log("Previous release tag: ", baseReleaseTag);
-  
-    if (!baseReleaseTag) {
-      if (!continueOnError) {
-        throw new Error("Could not find previous release tag");
-      }
-      else{
-        console.warn("Could not find previous release tag");
-        return "";
-      }
-    }    
+const main = async (
+  continueOnError,
+  token,
+  headReleaseTag,
+  releaseTag,
+  owner,
+  repo,
+  tagFilter,
+  pathFilter,
+) => {
+  octokit = github.getOctokit(token, { owner: "", repo: "" });
+  console.log("Initiated octokit");
+  console.log("Head release tag: ", headReleaseTag);
 
-    const response = await octokit.rest.repos.compareCommitsWithBasehead({
-      owner: owner,
-      repo: repo,
-      basehead: `${baseReleaseTag}...${headReleaseTag}`,
-    });    
-    let messages = pathFilter ? (await extractCommitsBasedOnFilePath(response.data.commits, pathFilter, owner, repo) || [""]).join("") : (response.data.commits.map((c) => c.commit.message) || [""]).join("");
-    const branchHead = await getBranchForHeadCommit(response.data.commits[response.data.commits.length - 1].sha, owner, repo);
-    const branchHeadNames = branchHead.map((c) => c.name) || [""]
-    messages += branchHeadNames.join("");
-    
-    const regex = /[A-Z]{2,}-\d+/g;
-    let issueKeys = messages.match(regex);
-  
-    if (!issueKeys || issueKeys.length == 0) {
-      if (!continueOnError) {
-        throw new Error("No issue keys found");
-      }
-      else{
-        console.warn("No issue keys found");
-        return ""
-      }
-    }    
-    issueKeys = [...new Set(issueKeys)] //remove duplicates
-    console.log("Found the following issue-keys", issueKeys.join(","));
-    let output = issueKeys.join(",");
-    return output;
+  var repoTags = await getRepoTags(owner, repo);
+  if (!repoTags || repoTags.length == 0) {
+    if (!continueOnError) {
+      throw new Error("No repo tags found");
+    } else {
+      console.warn("No repo tags found");
+      return "";
+    }
   }
+
+  let tags = tagFilter
+    ? repoTags.filter((c) => c.name.startsWith(tagFilter)).map((c) => c.name)
+    : repoTags.map((c) => c.name);
+  const baseReleaseTag = releaseTag ||
+    await findPreviousSemver(headReleaseTag, tags);
+  console.log("Previous release tag: ", baseReleaseTag);
+
+  if (!baseReleaseTag) {
+    if (!continueOnError) {
+      throw new Error("Could not find previous release tag");
+    } else {
+      console.warn("Could not find previous release tag");
+      return "";
+    }
+  }
+
+  const response = await octokit.rest.repos.compareCommitsWithBasehead({
+    owner: owner,
+    repo: repo,
+    basehead: `${baseReleaseTag}...${headReleaseTag}`,
+  });
+  let messages = pathFilter
+    ? (await extractCommitsBasedOnFilePath(
+      response.data.commits,
+      pathFilter,
+      owner,
+      repo,
+    ) || [""]).join("")
+    : (response.data.commits.map((c) => c.commit.message) || [""]).join("");
+  const branchHead = await getBranchForHeadCommit(
+    response.data.commits[response.data.commits.length - 1].sha,
+    owner,
+    repo,
+  );
+  const branchHeadNames = branchHead.map((c) => c.name) || [""];
+  messages += branchHeadNames.join("");
+
+  const regex = /[A-Z]{2,}-\d+/g;
+  let issueKeys = messages.match(regex);
+
+  if (!issueKeys || issueKeys.length == 0) {
+    if (!continueOnError) {
+      throw new Error("No issue keys found");
+    } else {
+      console.warn("No issue keys found");
+      return "";
+    }
+  }
+  issueKeys = [...new Set(issueKeys)]; //remove duplicates
+  console.log("Found the following issue-keys", issueKeys.join(","));
+  let output = issueKeys.join(",");
+  return output;
+};
 
 (async function () {
   const continueOnError = core.getInput("continue-on-error");
@@ -158,7 +202,16 @@ const main = async(continueOnError, token, headReleaseTag, releaseTag, owner, re
     const repo = context.repo.repo;
     const tagFilter = core.getInput("tag-filter");
     const pathFilter = core.getInput("path-filter");
-    let issueKeys = await main(continueOnError, token, headReleaseTag, baseReleaseTag, owner, repo, tagFilter, pathFilter);    
+    let issueKeys = await main(
+      continueOnError,
+      token,
+      headReleaseTag,
+      baseReleaseTag,
+      owner,
+      repo,
+      tagFilter,
+      pathFilter,
+    );
     core.setOutput("issue-keys", issueKeys);
   } catch (error) {
     if (!continueOnError) {
